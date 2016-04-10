@@ -3,14 +3,14 @@ class Home extends React.Component {
     super(props);
     this.state = {
       allConditions: [],
-      resultConditions: []
+      resultConditions: [],
+      synonyms: []
     };
   }
 
   componentDidMount() {
     $.get('/api/conditions').done((data) => {
       this.setState({allConditions: data});
-      console.log('allConditions:', data);
     })
   }
 
@@ -43,30 +43,69 @@ class Home extends React.Component {
   }
 
   handleOnChange(event) {
-    console.log('this', this);
     const query = event.target.value.trim().toLocaleLowerCase();
 
     this.setState({resultConditions: this.getResultConditions(query)});
   }
 
+  getSortedConditions() {
+    const {resultConditions} = this.state;
+
+    return _.sortBy(resultConditions, (condition) => {
+      return condition.synonyms.length
+    });
+  }
+
+  sortByAscending() {
+    const sortedConditions = this.getSortedConditions();
+
+    this.setState({resultConditions: sortedConditions});
+  }
+
+  sortByDiscending() {
+    const sortedConditions = this.getSortedConditions().reverse();
+
+    this.setState({resultConditions: sortedConditions});
+  }
+
+  handleOnConditionClick(condition) {
+    this.setState({synonyms: condition.synonyms});
+    $('#modal').modal('show');
+  }
+
   render () {
     return (
       <div className="container">
-        <h1>Enter a condition</h1>
+        <h1>Enter a condition name</h1>
         <div className="row">
           <div className="col-sm-8">
-            <div className="input-group">
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Search for..."
-                onChange={(event) => this.handleOnChange(event)}/>
-              <span className="input-group-btn">
-                <button className="btn btn-secondary" type="button">Go!</button>
-              </span>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Search for..."
+              onChange={(event) => this.handleOnChange(event)}/>
+            <br/>
+            <div>
+              <button
+                className="btn btn-primary"
+                type="button"
+                onClick={() => this.sortByAscending()}>
+                By Ascending
+              </button>
+              {' '}
+              <button
+                className="btn btn-primary"
+                type="button"
+                onClick={() => this.sortByDiscending()}>
+                By Discending
+              </button>
             </div>
             <br/>
-            <Conditions conditions={this.state.resultConditions}/>
+            <Conditions
+              conditions={this.state.resultConditions}
+              handleOnClick={(condition) => this.handleOnConditionClick(condition)}
+            />
+            <Modal synonyms={this.state.synonyms}/>
           </div>
         </div>
       </div>
